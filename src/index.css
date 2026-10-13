@@ -1,0 +1,337 @@
+@import "tailwindcss";
+
+/*
+  Arah visual: platformer malam bergaya ilustrasi (referensi GDevelop dari pemilik proyek).
+  Langit malam pekat, pulau rumput mint di atas batu kerikil, bulan pucat, awan putih tebal,
+  portal sian. UI: judul tebal, tombol pil sian/putih, chip "event" putih.
+*/
+@theme {
+  --color-night: #0A0B1A;
+  --color-night-2: #12132D;
+  --color-violet: #261B48;
+  --color-violet-2: #1C1740;
+  --color-line: #332D6B;
+  --color-mint: #3CE0A0;
+  --color-mint-hi: #8AF7C9;
+  --color-mint-deep: #1FA36E;
+  --color-cyan: #1FE4CE;
+  --color-moon: #D5F9EB;
+  --color-ink: #0E0F24;
+  --color-ink-2: #4B4F6E;
+  --color-paper: #F4F3FA;
+  --color-muted: #B9BDD6;
+  --color-coral: #FF5A5A;
+  --color-gold: #FFB800;
+
+  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-snap: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@layer base {
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    background: var(--color-night);
+    color: #fff;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 { letter-spacing: -0.025em; }
+  button { cursor: pointer; }
+  /* kode C++ harus tampil apa adanya: "->" jangan berubah jadi panah ligatur */
+  code, pre, .font-mono { font-variant-ligatures: none; font-feature-settings: "liga" 0, "calt" 0; }
+  :focus-visible { outline: 3px solid #fff; outline-offset: 3px; border-radius: 10px; }
+  .on-light :focus-visible { outline-color: var(--color-ink); }
+}
+
+@layer components {
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    padding: 0 1.15rem;
+    border-radius: 999px;
+    font-weight: 800;
+    font-size: 0.875rem;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    transition: transform 140ms var(--ease-pop), background-color 140ms ease, color 140ms ease;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+  .btn:active:not(:disabled) { transform: scale(0.95); }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn-cyan { background: var(--color-cyan); color: var(--color-ink); }
+  .btn-cyan:hover:not(:disabled) { background: #63F2E0; }
+  .btn-white { background: #fff; color: var(--color-ink); }
+  .btn-white:hover:not(:disabled) { background: #E6E3F7; }
+  .btn-ink { background: var(--color-ink); color: #fff; }
+  .btn-ink:hover:not(:disabled) { background: #26244A; }
+  .btn-ghost { color: #fff; border-radius: 12px; padding: 0 0.8rem; }
+  .btn-ghost:hover { background: rgb(255 255 255 / 0.08); }
+  .btn-icon {
+    width: 44px;
+    padding: 0;
+    border-radius: 14px;
+    background: #1A1740;
+    color: #fff;
+    box-shadow: inset 0 0 0 1.5px #3A3474;
+  }
+  .btn-icon:hover { background: #241F55; }
+
+  /* chip event putih, seperti baris event di editor game */
+  .chip {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: #fff;
+    color: var(--color-ink);
+    border-radius: 999px;
+    box-shadow: 0 6px 18px rgb(20 16 60 / 0.12);
+  }
+
+  .num-dot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    border-radius: 999px;
+    background: #3B3F5C;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  /* tepi rumput mint menetes, motif identitas di pembatas atas */
+  .grass-edge {
+    height: 26px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='26' viewBox='0 0 120 26'%3E%3Cpath d='M0 10 C2 10 2 19 6 19 C10 19 11 10 16 10 C22 10 22 15 28 15 C34 15 35 10 41 10 C47 10 48 24 55 24 C62 24 63 10 70 10 C76 10 76 14 82 14 C88 14 90 10 96 10 C102 10 102 22 108 22 C114 22 116 10 120 10 V0 H0 Z' fill='%233CE0A0'/%3E%3Cpath d='M0 10 C2 10 2 19 6 19 C10 19 11 10 16 10 C22 10 22 15 28 15 C34 15 35 10 41 10 C47 10 48 24 55 24 C62 24 63 10 70 10 C76 10 76 14 82 14 C88 14 90 10 96 10 C102 10 102 22 108 22 C114 22 116 10 120 10' fill='none' stroke='%230B3B2B' stroke-width='3'/%3E%3Cpath d='M0 4 H120' stroke='%238AF7C9' stroke-width='3'/%3E%3C/svg%3E");
+    background-repeat: repeat-x;
+    background-size: 120px 26px;
+  }
+
+  .arena-sky {
+    background: linear-gradient(180deg, #07081A 0%, #0D0E28 38%, #1B1546 74%, #2A1E5C 100%);
+  }
+  .night-sky {
+    background:
+      radial-gradient(1.5px 1.5px at 12% 22%, #fff 99%, transparent),
+      radial-gradient(1px 1px at 34% 70%, #fff 99%, transparent),
+      radial-gradient(1.5px 1.5px at 58% 16%, #fff 99%, transparent),
+      radial-gradient(1px 1px at 76% 58%, #fff 99%, transparent),
+      radial-gradient(1.5px 1.5px at 92% 30%, #fff 99%, transparent),
+      linear-gradient(180deg, #07081A 0%, #12112F 100%);
+  }
+  .panel-dark {
+    background: linear-gradient(180deg, #1C1740 0%, #161233 100%);
+    border-radius: 22px;
+    box-shadow: inset 0 0 0 1.5px #2B2560;
+  }
+}
+
+/* ---------- gerak ---------- */
+
+@keyframes twinkle { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+.twinkle { animation: twinkle 2.6s ease-in-out infinite; }
+
+@keyframes gem-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.gem-bob { animation: gem-bob 2.8s ease-in-out infinite; }
+
+@keyframes portal-breathe { 0%, 100% { opacity: 0.1; } 50% { opacity: 0.22; } }
+.portal-breathe { animation: portal-breathe 3.4s ease-in-out infinite; }
+
+@keyframes waterfall { to { stroke-dashoffset: -72; } }
+.waterfall-line { animation: waterfall 0.9s linear infinite; }
+
+@keyframes bubble { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+.shield-bubble { transform-box: fill-box; transform-origin: center; animation: bubble 1.6s ease-in-out infinite; }
+
+@keyframes fog-drift { 0%, 100% { transform: translateX(-4px); } 50% { transform: translateX(4px); } }
+.fog-drift { animation: fog-drift 2s ease-in-out infinite; }
+
+@keyframes svg-glitch {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-3px, 1px); }
+  40% { transform: translate(3px, -1px); }
+  60% { transform: translate(-1px, 2px); }
+  80% { transform: translate(2px, 0); }
+}
+.svg-glitch { animation: svg-glitch 0.35s steps(2) infinite; }
+
+@keyframes orbit {
+  from { transform: rotate(0deg) translateX(20px) rotate(0deg); }
+  to { transform: rotate(360deg) translateX(20px) rotate(-360deg); }
+}
+@keyframes dizzy-fade { 0%, 80% { opacity: 1; } 100% { opacity: 0; } }
+.dizzy-stars { animation: dizzy-fade 1.6s ease-out forwards; }
+.dizzy-star { transform-box: view-box; transform-origin: 0 0; animation: orbit 0.8s linear infinite; }
+.dizzy-star-1 { animation-delay: -0.27s; }
+.dizzy-star-2 { animation-delay: -0.53s; }
+
+@keyframes particle {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(0.3); opacity: 0; }
+}
+.particle { transform-box: fill-box; transform-origin: center; animation: particle 0.85s var(--ease-snap) forwards; }
+
+@keyframes boom-flash { 0% { transform: scale(0.3); opacity: 1; } 100% { transform: scale(1.6); opacity: 0; } }
+.boom-flash { transform-box: fill-box; transform-origin: center; animation: boom-flash 0.35s ease-out forwards; }
+
+@keyframes icon-pop {
+  0% { transform: translateY(10px) scale(0.2); opacity: 0; }
+  22% { transform: translateY(0) scale(1.18); opacity: 1; }
+  34% { transform: translateY(0) scale(1); }
+  78% { transform: translateY(-14px) scale(1); opacity: 1; }
+  100% { transform: translateY(-26px) scale(0.9); opacity: 0; }
+}
+.icon-pop { animation: icon-pop 1.3s var(--ease-snap) forwards; }
+
+@keyframes callout {
+  0% { opacity: 0; transform: translateY(-18px) scale(0.92); }
+  8% { opacity: 1; transform: translateY(0) scale(1.03); }
+  13% { transform: translateY(0) scale(1); }
+  88% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-10px); }
+}
+.callout-in { animation: callout 2.6s var(--ease-snap) forwards; }
+
+@keyframes pop-in {
+  0% { opacity: 0; transform: translateY(12px) scale(0.9); }
+  60% { opacity: 1; transform: translateY(0) scale(1.03); }
+  100% { opacity: 1; transform: none; }
+}
+.pop-in { animation: pop-in 280ms var(--ease-snap) both; }
+
+@keyframes sheet-up { from { transform: translateY(100%); } to { transform: none; } }
+.sheet-up { animation: sheet-up 300ms var(--ease-snap) both; }
+
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+.fade-in { animation: fade-in 200ms ease-out both; }
+
+@keyframes screen-shake {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  20% { transform: translate(-8px, 4px) rotate(-1deg); }
+  40% { transform: translate(8px, -4px) rotate(1deg); }
+  60% { transform: translate(-5px, -3px) rotate(-0.5deg); }
+  80% { transform: translate(5px, 2px) rotate(0.5deg); }
+}
+.animate-shake { animation: screen-shake 0.38s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
+
+/* efek gangguan di HP */
+@keyframes splat-in { 0% { transform: scale(0.2) rotate(var(--rot)); } 70% { transform: scale(1.08) rotate(var(--rot)); } 100% { transform: scale(1) rotate(var(--rot)); } }
+.splat { animation: splat-in 260ms var(--ease-pop) both; }
+@keyframes wipe { to { transform: scale(0.4) rotate(var(--rot)); opacity: 0; } }
+.splat-wiped { animation: wipe 220ms ease-in forwards; pointer-events: none; }
+
+@keyframes duck-walk { from { left: -120px; } to { left: calc(100% + 20px); } }
+@keyframes duck-waddle { 0%, 100% { transform: rotate(-7deg); } 50% { transform: rotate(7deg) translateY(-3px); } }
+.duck { animation: duck-walk var(--dur, 6s) linear infinite; animation-delay: var(--delay, 0s); }
+.duck-body { animation: duck-waddle 0.42s ease-in-out infinite; }
+@keyframes duck-pop { to { transform: scale(1.6); opacity: 0; } }
+.duck-gone { animation: duck-pop 220ms ease-out forwards; pointer-events: none; }
+
+@keyframes text-glitch {
+  0%, 100% { transform: none; text-shadow: none; }
+  25% { transform: translate(-2px, 1px); text-shadow: 2px 0 #FF6FB5, -2px 0 #1FE4CE; }
+  50% { transform: translate(2px, -1px); text-shadow: -2px 0 #FF6FB5, 2px 0 #1FE4CE; }
+  75% { transform: translate(-1px, 0); text-shadow: none; }
+}
+.text-glitch { animation: text-glitch 0.5s steps(3) infinite; }
+
+@keyframes crate-shake {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  20% { transform: rotate(-8deg) scale(1.04); }
+  40% { transform: rotate(8deg) scale(1.04); }
+  60% { transform: rotate(-6deg) scale(1.08); }
+  80% { transform: rotate(6deg) scale(1.08); }
+}
+.crate-shake { animation: crate-shake 0.6s ease-in-out 2; }
+
+@keyframes card-deal {
+  0% { opacity: 0; transform: translateY(60px) rotate(var(--tilt)) scale(0.6); }
+  70% { opacity: 1; transform: translateY(-6px) rotate(calc(var(--tilt) * -0.3)) scale(1.04); }
+  100% { opacity: 1; transform: translateY(0) rotate(0deg) scale(1); }
+}
+.card-deal { animation: card-deal 460ms var(--ease-snap) both; }
+
+@keyframes climb-hop { 0% { transform: translateY(0); } 40% { transform: translateY(-14px); } 100% { transform: translateY(0); } }
+.climb-hop { animation: climb-hop 420ms var(--ease-pop); }
+
+/* --- layar HP yang diganggu --- */
+@keyframes spin-screen { to { transform: rotate(360deg); } }
+.spin-screen { animation: spin-screen 1.8s linear infinite; }
+
+@keyframes quake-screen {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  20% { transform: translate(-11px, 6px) rotate(-2.5deg); }
+  40% { transform: translate(9px, -8px) rotate(2deg); }
+  60% { transform: translate(-7px, -5px) rotate(-1.5deg); }
+  80% { transform: translate(10px, 7px) rotate(2.5deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+.quake-screen { animation: quake-screen 0.16s linear infinite; }
+
+@keyframes hack-shift {
+  0%, 100% { transform: none; filter: none; }
+  10% { transform: translateX(-6px) skewX(-4deg); filter: hue-rotate(90deg) contrast(1.4); }
+  12% { transform: none; filter: none; }
+  48% { transform: translateX(5px); filter: invert(0.85) hue-rotate(180deg); }
+  50% { transform: none; filter: none; }
+  78% { transform: translateY(-4px) skewX(5deg); filter: saturate(3); }
+  80% { transform: none; filter: none; }
+}
+.hack-shift { animation: hack-shift 1.3s steps(1) infinite; }
+
+@keyframes hit-flash { 0% { opacity: 0.75; } 100% { opacity: 0; } }
+.hit-flash { background: radial-gradient(circle at 50% 50%, transparent 30%, var(--flash) 100%); animation: hit-flash 0.6s ease-out forwards; }
+
+@keyframes boom-screen {
+  0% { background: #FFF6D6; opacity: 1; }
+  30% { background: #FF8A1F; opacity: 0.9; }
+  100% { background: #FF5A5A; opacity: 0; }
+}
+.boom-screen { animation: boom-screen 0.9s ease-out forwards; }
+
+@keyframes duck-walk-rev { from { left: calc(100% + 20px); } to { left: -200px; } }
+.duck-rev { animation-name: duck-walk-rev; }
+
+@keyframes snail-crawl { from { left: -80px; } to { left: calc(100% + 10px); } }
+.snail-crawl { animation: snail-crawl 9s linear infinite; }
+
+@keyframes monster-idle { 0%, 100% { transform: translateY(0) scale(1, 1); } 50% { transform: translateY(-10px) scale(1.04, 0.96); } }
+.monster-idle { animation: monster-idle 1s ease-in-out infinite; }
+@keyframes monster-hit { 0% { transform: scale(1.25, 0.7) rotate(-8deg); } 60% { transform: scale(0.92, 1.1) rotate(4deg); } 100% { transform: none; } }
+.monster-hit { animation: monster-hit 260ms var(--ease-pop); }
+
+@keyframes bomb-shake { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+.bomb-shake { display: inline-block; animation: bomb-shake 0.5s ease-in-out infinite; }
+.bomb-shake-fast { display: inline-block; animation: bomb-shake 0.16s ease-in-out infinite; }
+
+@keyframes banana-wobble { 0%, 100% { transform: translateX(0) rotate(0deg); } 30% { transform: translateX(-7px) rotate(-1.5deg); } 70% { transform: translateX(7px) rotate(1.5deg); } }
+.banana-wobble { animation: banana-wobble 0.9s ease-in-out infinite; }
+
+/* arena: monster kecil menggigit tali */
+@keyframes monster-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+.monster-bob { animation: monster-bob 0.6s ease-in-out infinite; }
+
+/* gulir tipis */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #332D6B; border-radius: 999px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .callout-in { animation: none !important; }
+}
