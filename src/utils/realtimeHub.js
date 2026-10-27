@@ -17,13 +17,24 @@ class RealtimeHub {
     this.socket = null;
     this.listeners = [];
     this.onActionHandler = null;
+    this.onReadyCallback = null;
+    this.isSubscribed = false;
     this.mode = 'local';
   }
 
   get transport() {
-    if (this.supabaseChannel) return 'supabase';
+    if (this.supabaseChannel) {
+      return this.isSubscribed ? 'supabase' : 'supabase-connecting';
+    }
     if (this.socket && this.socket.connected) return 'socket';
     return 'local';
+  }
+
+  onReady(cb) {
+    this.onReadyCallback = cb;
+    if (this.isSubscribed) {
+      try { cb(); } catch (e) { console.error(e); }
+    }
   }
 
   init(onUpdateCallback) {
@@ -39,7 +50,17 @@ class RealtimeHub {
       this.supabaseChannel
         .on('broadcast', { event: 'room:update' }, (msg) => this.notify(msg.payload))
         .on('broadcast', { event: 'action:event' }, (msg) => this.handleIncomingAction(msg.payload))
-        .subscribe();
+        .subscribe((status, err) => {
+          console.log(`⚡ [Supabase Realtime] Channel status: ${status}`, err || '');
+          if (status === 'SUBSCRIBED') {
+            this.isSubscribed = true;
+            if (this.onReadyCallback) {
+              try { this.onReadyCallback(); } catch (e) { console.error(e); }
+            }
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+            this.isSubscribed = false;
+          }
+        });
       return;
     }
 
@@ -91,7 +112,12 @@ class RealtimeHub {
 
   broadcastState(state) {
     if (this.supabaseChannel) {
-      this.supabaseChannel.send({ type: 'broadcast', event: 'room:update', payload: state });
+      this.supabaseChannel
+        .send({ type: 'broadcast', event: 'room:update', payload: state })
+        .then((res) => {
+          if (res !== 'ok') console.warn('⚠️ [Supabase Realtime] broadcastState response:', res);
+        })
+        .catch((err) => console.error('❌ [Supabase Realtime] broadcastState error:', err));
     }
     if (this.broadcastChannel) {
       this.broadcastChannel.postMessage({ type: 'room:update', data: state });
@@ -103,7 +129,12 @@ class RealtimeHub {
     const actionObj = { action, payload, timestamp: Date.now() };
 
     if (this.supabaseChannel) {
-      this.supabaseChannel.send({ type: 'broadcast', event: 'action:event', payload: actionObj });
+      this.supabaseChannel
+        .send({ type: 'broadcast', event: 'action:event', payload: actionObj })
+        .then((res) => {
+          if (res !== 'ok') console.warn('⚠️ [Supabase Realtime] emitAction response:', res);
+        })
+        .catch((err) => console.error('❌ [Supabase Realtime] emitAction error:', err));
       this.handleIncomingAction(actionObj);
       return;
     }

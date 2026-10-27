@@ -29,7 +29,8 @@ const writeSession = (key, value) => {
 const TRANSPORT_LABEL = {
   local: 'Lokal: antar tab di laptop ini',
   socket: 'Server Wi-Fi',
-  supabase: 'Supabase online'
+  supabase: 'Supabase online',
+  'supabase-connecting': 'Menyambung ke Supabase...'
 };
 
 const VIEWS = [
@@ -74,10 +75,29 @@ export default function App() {
       realtimeHub.broadcastState({ ...next, sentAt: Date.now() });
     });
 
-    if (!IS_HOST) realtimeHub.emitAction('sync:request');
-    const poll = setInterval(() => setTransport(realtimeHub.transport), 1500);
+    realtimeHub.onReady(() => {
+      if (!IS_HOST) {
+        realtimeHub.emitAction('sync:request');
+      } else {
+        realtimeHub.broadcastState({ ...stateRef.current, sentAt: Date.now() });
+      }
+    });
+
+    // Request sync berkala untuk siswa jika belum mulai (mengantisipasi jeda koneksi mobile)
+    let syncTimer = null;
+    if (!IS_HOST) {
+      realtimeHub.emitAction('sync:request');
+      syncTimer = setInterval(() => {
+        if (!stateRef.current?.isPlaying) {
+          realtimeHub.emitAction('sync:request');
+        }
+      }, 3000);
+    }
+
+    const poll = setInterval(() => setTransport(realtimeHub.transport), 1200);
     return () => {
       clearInterval(poll);
+      if (syncTimer) clearInterval(syncTimer);
       realtimeHub.destroy();
     };
   }, []);
@@ -89,6 +109,15 @@ export default function App() {
 
   const now = tick + offsetRef.current;
   const emit = useCallback((action, payload) => realtimeHub.emitAction(action, payload), []);
+
+  // host: siarkan denyut state berkala saat bermain agar HP siswa tidak pernah tertinggal
+  useEffect(() => {
+    if (!IS_HOST || !roomState.isPlaying) return;
+    const heartbeat = setInterval(() => {
+      realtimeHub.broadcastState({ ...stateRef.current, sentAt: Date.now() });
+    }, 2500);
+    return () => clearInterval(heartbeat);
+  }, [roomState.isPlaying]);
 
   // host: akhiri permainan saat 15 menit habis, dan ledakkan Bom Waktu tepat waktu
   // (mode server Wi-Fi: server yang mengurus detak ini)
