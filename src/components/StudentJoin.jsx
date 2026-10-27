@@ -12,7 +12,7 @@ const ROLES = [
 ];
 
 // Layar gabung untuk HP siswa yang membuka link/QR dari proyektor
-export default function StudentJoin({ roomState, onJoin }) {
+export default function StudentJoin({ roomState, onJoin, transport = 'local' }) {
   const [teamId, setTeamId] = useState(null);
   const [name, setName] = useState('');
   const [role, setRole] = useState(ROLES[0][0]);
@@ -30,6 +30,18 @@ export default function StudentJoin({ roomState, onJoin }) {
   return (
     <div className="flex min-h-dvh flex-col bg-night text-white">
       <div className="relative shrink-0 overflow-hidden px-5 pb-24 pt-[max(28px,env(safe-area-inset-top))]">
+        <div className="absolute right-4 top-[max(16px,env(safe-area-inset-top))] z-20 flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-xs backdrop-blur-md">
+          <span
+            className="h-2 w-2 rounded-full"
+            style={{
+              background: transport === 'supabase' ? '#3CE0A0' : transport === 'supabase-connecting' ? '#FFB800' : '#FF5A5A'
+            }}
+          />
+          <span className="text-white/80">
+            {transport === 'supabase' ? 'Supabase Online' : transport === 'supabase-connecting' ? 'Menghubungkan...' : 'Mode Lokal'}
+          </span>
+        </div>
+
         <svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMin slice" className="absolute inset-0 h-full w-full" aria-hidden="true">
           <Stars x={0} y={0} w={400} h={200} count={30} seed={2} />
           <Moon cx={300} cy={42} r={24} />

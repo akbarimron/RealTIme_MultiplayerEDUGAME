@@ -44,8 +44,10 @@ class RealtimeHub {
     if (supabase) {
       this.mode = 'supabase';
       this.supabaseChannel = supabase.channel(CHANNEL_NAME, {
-        // self: false, karena aksi milik sendiri sudah diproses langsung di emitAction
-        config: { broadcast: { self: false } }
+        config: {
+          broadcast: { self: false, ack: true },
+          private: false
+        }
       });
       this.supabaseChannel
         .on('broadcast', { event: 'room:update' }, (msg) => this.notify(msg.payload))

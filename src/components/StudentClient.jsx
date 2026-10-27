@@ -92,7 +92,7 @@ function personal(ev, me) {
   return null;
 }
 
-export default function StudentClient({ roomState, now, teamId, playerName, emit, demo = false, onLeave }) {
+export default function StudentClient({ roomState, now, teamId, playerName, emit, demo = false, onLeave, transport = 'local' }) {
   const team = roomState.teams.find((t) => t.id === teamId);
   const meta = teamMeta(teamId);
   const q = QUESTIONS[(team?.qIndex || 0) % QUESTIONS.length];
@@ -352,7 +352,7 @@ export default function StudentClient({ roomState, now, teamId, playerName, emit
               ) : team.done ? (
                 <SummitCard team={team} />
               ) : !playing ? (
-                <WaitingCard paused={roomState.startedOnce} demo={demo} onStart={() => emit('teacher:toggle_game')} />
+                <WaitingCard paused={roomState.startedOnce} demo={demo} onStart={() => emit('teacher:toggle_game')} transport={transport} />
               ) : feedback ? (
                 <FeedbackCard fb={feedback} teamId={teamId} />
               ) : (
@@ -648,7 +648,7 @@ function FeedbackCard({ fb, teamId }) {
   );
 }
 
-function WaitingCard({ paused, demo, onStart }) {
+function WaitingCard({ paused, demo, onStart, transport }) {
   return (
     <div className="flex flex-col items-center gap-3 rounded-[24px] bg-white p-6 text-center shadow-[0_8px_24px_rgba(20,16,60,0.10)]">
       <SkillIcon id={paused ? 'freeze' : 'crate'} size={72} />
@@ -656,6 +656,21 @@ function WaitingCard({ paused, demo, onStart }) {
       <p className="text-[15px] text-ink-2">
         {paused ? 'Tunggu sebentar, posisi dan tas skillmu aman.' : 'Soal pertamamu sudah siap. Sambil menunggu, ketuk skill di tas untuk membaca gunanya.'}
       </p>
+      <div className="mt-1 flex items-center gap-2 rounded-full bg-paper px-3 py-1.5 text-xs font-semibold text-ink-2">
+        <span
+          className="h-2 w-2 rounded-full"
+          style={{
+            background: transport === 'supabase' ? '#3CE0A0' : transport === 'supabase-connecting' ? '#FFB800' : '#FF5A5A'
+          }}
+        />
+        <span>
+          {transport === 'supabase'
+            ? 'Terhubung ke Cloud (Supabase Online)'
+            : transport === 'supabase-connecting'
+            ? 'Menyambung ke Supabase...'
+            : 'Mode Lokal (Belum terhubung ke Supabase)'}
+        </span>
+      </div>
       {demo && (
         <button type="button" onClick={onStart} className="btn btn-ink mt-1">
           {paused ? 'Lanjutkan (uji coba)' : 'Mulai permainan (uji coba)'}

@@ -189,11 +189,12 @@ export default function App() {
             teamId={player.teamId}
             playerName={player.name}
             emit={emit}
+            transport={transport}
             onLeave={() => { sessionStorage.removeItem('pt-player'); setPlayer(null); }}
           />
         </div>
       ) : (
-        <StudentJoin roomState={roomState} onJoin={handleJoin} />
+        <StudentJoin roomState={roomState} onJoin={handleJoin} transport={transport} />
       ))}
 
       <SupabaseConfigModal isOpen={showConfig} onClose={() => setShowConfig(false)} />
