@@ -316,10 +316,10 @@ export default function StudentClient({ roomState, now, teamId, playerName, emit
               <div className="min-w-0 flex-1">
                 <p className="truncate text-base font-extrabold leading-tight">{meta.short} · {meta.name}</p>
                 <p className="truncate text-xs text-muted">
-                  {playerName}
+                  Perangkat {meta.name}
                   {onLeave && (
                     <button type="button" onClick={onLeave} className="ml-2 font-bold text-cyan underline-offset-2 hover:underline">
-                      ganti
+                      ganti kelompok
                     </button>
                   )}
                 </p>

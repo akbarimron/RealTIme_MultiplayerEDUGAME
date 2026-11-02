@@ -220,8 +220,19 @@ function Standings({ ranked, now, emit, playing }) {
                   <span className="truncate text-sm font-extrabold">{m.short} · {t.name}</span>
                   {t.shield && <SkillIcon id="shield" size={18} title="Perisai aktif" />}
                   {fx.map((k) => <SkillIcon key={k} id={k} size={18} title={SKILLS[k].name} />)}
-                  <span className="ml-auto shrink-0 text-xs text-muted">
-                    {t.members.length ? `${t.members.length} siswa · ` : ''}{t.bag.length} skill
+                  <span className="ml-auto shrink-0 flex items-center gap-1 text-xs">
+                    {t.claimed || (t.members && t.members.length > 0) ? (
+                      <span className="font-bold text-mint flex items-center gap-1">
+                        <span className="h-1.5 w-1.5 rounded-full bg-mint" />
+                        HP Terhubung
+                      </span>
+                    ) : (
+                      <span className="text-white/40 flex items-center gap-1">
+                        <span className="h-1.5 w-1.5 rounded-full bg-white/30" />
+                        Menunggu HP
+                      </span>
+                    )}
+                    <span className="text-muted">· {t.bag.length} skill</span>
                   </span>
                 </div>
                 <RopeMeter teamId={t.id} node={t.node} mood={mood} />

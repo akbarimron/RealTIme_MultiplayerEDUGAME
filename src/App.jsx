@@ -8,6 +8,7 @@ import ClimberFace from './components/art/ClimberFace';
 import SkillIcon from './components/art/SkillIcon';
 import { realtimeHub } from './utils/realtimeHub';
 import { isAdminAuthenticated, logoutAdmin } from './utils/adminAuth';
+import { getDeviceId } from './utils/deviceId';
 import { createInitialState, reduce, hasPendingExplosion, TEAMS } from './game/engine';
 import { SKILLS, SKILL_IDS, GROUP_LABEL } from './game/skills';
 
@@ -98,6 +99,14 @@ export default function App() {
     realtimeHub.onReady(() => {
       if (!isHostRef.current) {
         realtimeHub.emitAction('sync:request');
+        const savedPlayer = readSession('pt-player', null);
+        if (savedPlayer?.teamId) {
+          realtimeHub.emitAction('player:join', {
+            teamId: savedPlayer.teamId,
+            playerName: savedPlayer.name,
+            deviceId: getDeviceId()
+          });
+        }
       } else {
         realtimeHub.broadcastState({ ...stateRef.current, sentAt: Date.now() });
       }
@@ -149,7 +158,7 @@ export default function App() {
   const handleJoin = (p) => {
     writeSession('pt-player', p);
     setPlayer(p);
-    emit('player:join', { teamId: p.teamId, playerName: p.name, role: p.role });
+    emit('player:join', { teamId: p.teamId, playerName: p.name, deviceId: p.deviceId || getDeviceId() });
   };
 
   const phone = (teamId) => (
@@ -237,7 +246,11 @@ export default function App() {
             playerName={player.name}
             emit={emit}
             transport={transport}
-            onLeave={() => { sessionStorage.removeItem('pt-player'); setPlayer(null); }}
+            onLeave={() => {
+              emit('player:leave', { teamId: player.teamId, deviceId: getDeviceId() });
+              sessionStorage.removeItem('pt-player');
+              setPlayer(null);
+            }}
           />
         </div>
       ) : (

@@ -40,6 +40,8 @@ function makeTeam(meta, rng, now) {
     shield: false,
     mirror: false,
     members: [],
+    claimed: false,
+    claimedBy: null,
     lootSeq: 0,
     lastLoot: null
   };
@@ -222,10 +224,24 @@ export function reduce(prev, action, payload = {}, now = Date.now(), rng = Math.
   switch (action) {
     case 'player:join': {
       const t = team(payload.teamId);
-      const name = String(payload.playerName || '').trim().slice(0, 24);
-      if (!t || !name) break;
-      if (!t.members.find((m) => m.name === name)) t.members.push({ name, role: payload.role || 'Pendaki' });
-      push({ type: 'join', toId: t.id, name });
+      if (!t) break;
+      const deviceId = payload.deviceId || null;
+      const name = String(payload.playerName || t.name).trim();
+
+      t.claimed = true;
+      t.claimedBy = deviceId;
+      t.members = [{ name, deviceId }];
+      push({ type: 'join', toId: t.id, name, short: t.short });
+      break;
+    }
+
+    case 'player:leave': {
+      const t = team(payload.teamId);
+      if (!t) break;
+      t.claimed = false;
+      t.claimedBy = null;
+      t.members = [];
+      push({ type: 'leave', toId: t.id, short: t.short });
       break;
     }
 
@@ -332,7 +348,14 @@ export function reduce(prev, action, payload = {}, now = Date.now(), rng = Math.
 
     case 'teacher:reset': {
       const fresh = createInitialState({ now, rng });
-      fresh.teams.forEach((t) => { t.members = team(t.id)?.members || []; });
+      fresh.teams.forEach((t) => {
+        const old = team(t.id);
+        if (old) {
+          t.claimed = old.claimed || false;
+          t.claimedBy = old.claimedBy || null;
+          t.members = old.members || [];
+        }
+      });
       fresh.seq = s.seq;
       return fresh;
     }
