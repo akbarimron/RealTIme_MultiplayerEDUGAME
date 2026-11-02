@@ -5,29 +5,53 @@ const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), select
 // Dialog putih di atas latar malam. Tutup dengan Escape, klik latar, atau tombol tutup.
 export default function Modal({ open, onClose, label, size = 'md', children, sheetOnMobile = true }) {
   const box = useRef(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!open) return undefined;
     const previous = document.activeElement;
+
     const onKey = (e) => {
-      if (e.key === 'Escape') { e.stopPropagation(); onClose?.(); }
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        onCloseRef.current?.();
+      }
       if (e.key === 'Tab' && box.current) {
         const nodes = [...box.current.querySelectorAll(FOCUSABLE)];
         if (!nodes.length) return;
         const first = nodes[0];
         const last = nodes[nodes.length - 1];
-        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
       }
     };
+
     window.addEventListener('keydown', onKey);
-    const t = setTimeout(() => box.current?.querySelector(FOCUSABLE)?.focus(), 30);
+
+    // Fokus hanya SEKALI saat modal baru pertama kali terbuka.
+    // JANGAN mencuri fokus jika input atau elemen dalam modal sudah aktif.
+    const t = setTimeout(() => {
+      if (box.current && !box.current.contains(document.activeElement)) {
+        // Prioritaskan input teks atau autofocus sebelum tombol close X
+        const preferred = box.current.querySelector('input:not([disabled]), [autofocus], button:not([disabled])');
+        preferred?.focus?.();
+      }
+    }, 60);
+
     return () => {
       clearTimeout(t);
       window.removeEventListener('keydown', onKey);
-      previous?.focus?.();
+      if (previous && typeof previous.focus === 'function') {
+        try { previous.focus(); } catch {}
+      }
     };
-  }, [open, onClose]);
+  }, [open]); // Hanya bergantung pada status 'open', tidak mengulang fokus tiap re-render!
 
   if (!open) return null;
 

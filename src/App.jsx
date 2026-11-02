@@ -173,21 +173,26 @@ export default function App() {
     />
   );
 
-  const handleAdminLoginSuccess = () => {
+  const handleAdminLoginSuccess = useCallback(() => {
     setIsAdmin(true);
     setShowAdminLogin(false);
     setView('teacher');
     setTimeout(() => {
       realtimeHub.broadcastState({ ...stateRef.current, sentAt: Date.now() });
     }, 100);
-  };
+  }, []);
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     logoutAdmin();
     setIsAdmin(false);
     setView('student');
     setShowAdminLogin(true);
-  };
+  }, []);
+
+  const handleCloseAdminLogin = useCallback(() => setShowAdminLogin(false), []);
+  const handleOpenAdminLogin = useCallback(() => setShowAdminLogin(true), []);
+  const handleCloseConfig = useCallback(() => setShowConfig(false), []);
+  const handleOpenConfig = useCallback(() => setShowConfig(true), []);
 
   return (
     <div className="flex min-h-dvh flex-col bg-night">
@@ -196,7 +201,7 @@ export default function App() {
           view={view}
           setView={setView}
           transport={transport}
-          onOpenConfig={() => setShowConfig(true)}
+          onOpenConfig={handleOpenConfig}
           onLogout={handleLogout}
         />
       )}
@@ -258,17 +263,17 @@ export default function App() {
           roomState={roomState}
           onJoin={handleJoin}
           transport={transport}
-          onOpenAdminLogin={() => setShowAdminLogin(true)}
+          onOpenAdminLogin={handleOpenAdminLogin}
         />
       ))}
 
-      <SupabaseConfigModal isOpen={showConfig} onClose={() => setShowConfig(false)} />
+      <SupabaseConfigModal isOpen={showConfig} onClose={handleCloseConfig} />
 
       <AdminLoginModal
         isOpen={showAdminLogin}
-        onClose={() => setShowAdminLogin(false)}
+        onClose={handleCloseAdminLogin}
         onSuccess={handleAdminLoginSuccess}
-        onSwitchToStudent={() => setShowAdminLogin(false)}
+        onSwitchToStudent={handleCloseAdminLogin}
       />
     </div>
   );

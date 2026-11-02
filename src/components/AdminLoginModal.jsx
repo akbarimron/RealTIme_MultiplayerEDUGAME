@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Modal, { CloseButton } from './ui/Modal';
 import { loginAdmin } from '../utils/adminAuth';
 
@@ -8,9 +8,23 @@ export default function AdminLoginModal({ isOpen, onClose, onSuccess, onSwitchTo
   const [remember, setRemember] = useState(true);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setPassword('');
+      setError('');
+      const t = setTimeout(() => inputRef.current?.focus(), 80);
+      return () => clearTimeout(t);
+    }
+  }, [isOpen]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!password.trim()) {
+      setError('Masukkan kata sandi guru.');
+      return;
+    }
     setError('');
     setLoading(true);
 
@@ -51,9 +65,10 @@ export default function AdminLoginModal({ isOpen, onClose, onSuccess, onSwitchTo
             Kata Sandi Guru
             <div className="relative flex items-center">
               <input
+                ref={inputRef}
                 type={showPassword ? 'text' : 'password'}
                 required
-                autoFocus
+                autoComplete="current-password"
                 placeholder="Masukkan kata sandi..."
                 value={password}
                 onChange={(e) => {
@@ -65,7 +80,7 @@ export default function AdminLoginModal({ isOpen, onClose, onSuccess, onSwitchTo
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 p-1.5 text-xs font-bold text-ink-2 hover:text-ink"
+                className="absolute right-3 p-1.5 text-xs font-bold text-ink-2 hover:text-ink select-none"
                 tabIndex={-1}
               >
                 {showPassword ? 'Tutup' : 'Lihat'}
