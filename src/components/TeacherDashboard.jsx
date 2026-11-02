@@ -25,7 +25,7 @@ const SESSION_SEC = PHASES.reduce((s, p) => s + p.min * 60, 0);
 
 const mmss = (sec) => `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(Math.floor(sec % 60)).padStart(2, '0')}`;
 
-export default function TeacherDashboard({ roomState, now, emit, onLogout }) {
+export default function TeacherDashboard({ roomState, now, emit, onLogout, onOpenMateri }) {
   const [showDemo, setShowDemo] = useState(false);
   const [showVictory, setShowVictory] = useState(false);
   const [showQr, setShowQr] = useState(false);
@@ -52,6 +52,12 @@ export default function TeacherDashboard({ roomState, now, emit, onLogout }) {
     }
   };
 
+  const resetAll = () => {
+    if (window.confirm('Mulai sesi kelas baru?\n\nSemua posisi, waktu, dan 5 slot kelompok akan dikosongkan. HP siswa akan otomatis kembali ke layar pemilihan kelompok.')) {
+      emit('teacher:reset_all');
+    }
+  };
+
   const toggleMute = () => {
     const next = !muted;
     setMuted(next);
@@ -70,11 +76,24 @@ export default function TeacherDashboard({ roomState, now, emit, onLogout }) {
         </div>
 
         <nav aria-label="Alat guru" className="order-3 flex w-full flex-wrap gap-1 lg:order-none lg:mr-auto lg:w-auto">
+          {onOpenMateri && (
+            <button
+              type="button"
+              className="btn btn-ghost text-xs text-cyan font-extrabold hover:text-white hover:bg-cyan/20"
+              onClick={onOpenMateri}
+              title="Buka Slide Presentasi Teori & Materi Layar Penuh"
+            >
+              📖 Slide Materi
+            </button>
+          )}
           <button type="button" className="btn btn-ghost" onClick={() => setShowDemo(true)}>Materi 5 menit</button>
           <button type="button" className="btn btn-ghost" onClick={() => setShowQr(true)}>QR untuk siswa</button>
           <button type="button" className="btn btn-ghost" onClick={() => setShowVictory(true)}>Hadiah jajan</button>
           <button type="button" className="btn btn-ghost text-xs text-white/70 hover:text-white" onClick={() => setShowChangePassword(true)} title="Ganti kata sandi guru">
             🔑 Sandi Guru
+          </button>
+          <button type="button" className="btn btn-ghost text-xs text-coral hover:text-white hover:bg-coral/20" onClick={resetAll} title="Kosongkan semua kelompok untuk kelas baru">
+            🔄 Sesi Baru
           </button>
         </nav>
 

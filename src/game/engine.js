@@ -360,6 +360,13 @@ export function reduce(prev, action, payload = {}, now = Date.now(), rng = Math.
       return fresh;
     }
 
+    case 'teacher:reset_all': {
+      const fresh = createInitialState({ now, rng });
+      fresh.seq = s.seq;
+      push({ type: 'reset_all' });
+      return fresh;
+    }
+
     case 'teacher:gift': {
       s.teams.filter((t) => !t.done).forEach((t) => giveLoot(t, DROP_SIZE));
       push({ type: 'gift' });

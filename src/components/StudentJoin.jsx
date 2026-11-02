@@ -172,8 +172,16 @@ export default function StudentJoin({ roomState, onJoin, transport = 'local', on
           {selectedTeam ? `Masuk sebagai ${selectedTeam.short} (${selectedTeam.name})` : 'Pilih Salah Satu Kelompok'}
         </button>
 
-        {onOpenAdminLogin && (
-          <div className="pt-2 text-center">
+        <div className="flex flex-col items-center gap-2 pt-2 text-center">
+          <a
+            href="?view=materi"
+            className="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#6C4BD8] hover:underline"
+          >
+            <span>📖</span>
+            <span>Pelajari Slide Materi & Teori Linked List →</span>
+          </a>
+
+          {onOpenAdminLogin && (
             <button
               type="button"
               onClick={onOpenAdminLogin}
@@ -182,8 +190,8 @@ export default function StudentJoin({ roomState, onJoin, transport = 'local', on
               <span>🔒</span>
               <span>Masuk sebagai Guru / Pengawas</span>
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </form>
     </div>
   );

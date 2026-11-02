@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import TeacherDashboard from './components/TeacherDashboard';
 import StudentClient from './components/StudentClient';
 import StudentJoin from './components/StudentJoin';
+import TeachingSlides from './components/TeachingSlides';
 import SupabaseConfigModal from './components/SupabaseConfigModal';
 import AdminLoginModal from './components/AdminLoginModal';
 import ClimberFace from './components/art/ClimberFace';
@@ -15,6 +16,7 @@ import { SKILLS, SKILL_IDS, GROUP_LABEL } from './game/skills';
 const params = new URLSearchParams(window.location.search);
 // HP siswa dibuka lewat QR (?role=student) atau jika bukan admin
 const IS_PHONE = params.get('role') === 'student';
+const IS_MATERI = params.get('view') === 'materi';
 
 const readSession = (key, fallback) => {
   try {
@@ -46,6 +48,7 @@ const TRANSPORT_DOT_COLOR = {
 
 const VIEWS = [
   ['teacher', 'Layar guru'],
+  ['materi', '📖 Slide Materi'],
   ['student', 'HP siswa'],
   ['duel', 'Adu 2 HP']
 ];
@@ -61,7 +64,7 @@ export default function App() {
 
   // Autentikasi Admin/Guru
   const [isAdmin, setIsAdmin] = useState(() => isAdminAuthenticated());
-  const [showAdminLogin, setShowAdminLogin] = useState(() => !IS_PHONE && !isAdminAuthenticated());
+  const [showAdminLogin, setShowAdminLogin] = useState(() => !IS_PHONE && !IS_MATERI && !isAdminAuthenticated());
 
   const isHost = isAdmin && !IS_PHONE;
   const isHostRef = useRef(isHost);
@@ -69,7 +72,11 @@ export default function App() {
     isHostRef.current = isHost;
   }, [isHost]);
 
-  const [view, setView] = useState(() => (IS_PHONE ? 'student' : readSession('pt-view', 'teacher')));
+  const [view, setView] = useState(() => {
+    if (IS_MATERI) return 'materi';
+    if (IS_PHONE) return 'student';
+    return readSession('pt-view', 'teacher');
+  });
   const [demoTeam, setDemoTeam] = useState(() => readSession('pt-demo-team', 1));
   const [duelTeams, setDuelTeams] = useState(() => readSession('pt-duel-teams', [1, 2]));
   const [player, setPlayer] = useState(() => (IS_PHONE ? readSession('pt-player', null) : null));
@@ -155,6 +162,17 @@ export default function App() {
     else if (transport !== 'socket' && hasPendingExplosion(roomState, now)) emit('game:tick');
   }, [now, roomState, transport, emit, isHost]);
 
+  // Jika tim siswa tidak lagi diklaim (misal guru memulai sesi baru / reset total kelompok)
+  useEffect(() => {
+    if (!isHost && player) {
+      const myTeam = roomState.teams.find((t) => t.id === player.teamId);
+      if (myTeam && !myTeam.claimed) {
+        sessionStorage.removeItem('pt-player');
+        setPlayer(null);
+      }
+    }
+  }, [roomState, player, isHost]);
+
   const handleJoin = (p) => {
     writeSession('pt-player', p);
     setPlayer(p);
@@ -213,6 +231,23 @@ export default function App() {
           emit={emit}
           transport={transport}
           onLogout={handleLogout}
+          onOpenMateri={() => setView('materi')}
+        />
+      )}
+
+      {view === 'materi' && (
+        <TeachingSlides
+          onGoToGame={() => {
+            if (IS_PHONE) {
+              setView('student');
+            } else if (isAdmin) {
+              setView('teacher');
+            } else {
+              setShowAdminLogin(true);
+            }
+          }}
+          onLogout={handleLogout}
+          isHost={isHost}
         />
       )}
 
@@ -241,7 +276,7 @@ export default function App() {
         </div>
       )}
 
-      {!isHost && (player ? (
+      {!isHost && view !== 'materi' && (player ? (
         <div className="h-dvh">
           <StudentClient
             key={player.teamId}

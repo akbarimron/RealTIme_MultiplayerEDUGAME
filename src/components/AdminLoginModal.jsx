@@ -102,7 +102,7 @@ export default function AdminLoginModal({ isOpen, onClose, onSuccess, onSwitchTo
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 rounded-xl bg-coral/15 px-3.5 py-2.5 text-xs font-bold text-[#D32F2F]">
+            <div role="alert" className="flex items-center gap-2 rounded-xl bg-coral/15 px-3.5 py-2.5 text-xs font-bold text-[#D32F2F]">
               <span>⚠️</span>
               <span>{error}</span>
             </div>
