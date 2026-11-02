@@ -12,7 +12,7 @@ const ROLES = [
 ];
 
 // Layar gabung untuk HP siswa yang membuka link/QR dari proyektor
-export default function StudentJoin({ roomState, onJoin, transport = 'local' }) {
+export default function StudentJoin({ roomState, onJoin, transport = 'local', onOpenAdminLogin }) {
   const [teamId, setTeamId] = useState(null);
   const [name, setName] = useState('');
   const [role, setRole] = useState(ROLES[0][0]);
@@ -112,6 +112,19 @@ export default function StudentJoin({ roomState, onJoin, transport = 'local' }) 
         {error && <p role="alert" className="text-sm font-bold text-[#B3261E]">{error}</p>}
 
         <button type="submit" className="btn btn-ink mt-auto min-h-[54px] w-full text-base">Gabung ke tebing</button>
+
+        {onOpenAdminLogin && (
+          <div className="pt-2 text-center">
+            <button
+              type="button"
+              onClick={onOpenAdminLogin}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-2 hover:text-ink transition-colors"
+            >
+              <span>🔒</span>
+              <span>Masuk sebagai Guru / Pengawas</span>
+            </button>
+          </div>
+        )}
       </form>
     </div>
   );

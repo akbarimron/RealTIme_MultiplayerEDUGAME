@@ -3,16 +3,17 @@ import TeacherDashboard from './components/TeacherDashboard';
 import StudentClient from './components/StudentClient';
 import StudentJoin from './components/StudentJoin';
 import SupabaseConfigModal from './components/SupabaseConfigModal';
+import AdminLoginModal from './components/AdminLoginModal';
 import ClimberFace from './components/art/ClimberFace';
 import SkillIcon from './components/art/SkillIcon';
 import { realtimeHub } from './utils/realtimeHub';
+import { isAdminAuthenticated, logoutAdmin } from './utils/adminAuth';
 import { createInitialState, reduce, hasPendingExplosion, TEAMS } from './game/engine';
 import { SKILLS, SKILL_IDS, GROUP_LABEL } from './game/skills';
 
 const params = new URLSearchParams(window.location.search);
-// HP siswa asli dibuka lewat QR (?role=student). Tab lain adalah tab guru = host permainan.
+// HP siswa dibuka lewat QR (?role=student) atau jika bukan admin
 const IS_PHONE = params.get('role') === 'student';
-const IS_HOST = !IS_PHONE;
 
 const readSession = (key, fallback) => {
   try {
@@ -57,25 +58,35 @@ export default function App() {
   const [transport, setTransport] = useState('local');
   const [showConfig, setShowConfig] = useState(false);
 
+  // Autentikasi Admin/Guru
+  const [isAdmin, setIsAdmin] = useState(() => isAdminAuthenticated());
+  const [showAdminLogin, setShowAdminLogin] = useState(() => !IS_PHONE && !isAdminAuthenticated());
+
+  const isHost = isAdmin && !IS_PHONE;
+  const isHostRef = useRef(isHost);
+  useEffect(() => {
+    isHostRef.current = isHost;
+  }, [isHost]);
+
   const [view, setView] = useState(() => (IS_PHONE ? 'student' : readSession('pt-view', 'teacher')));
   const [demoTeam, setDemoTeam] = useState(() => readSession('pt-demo-team', 1));
   const [duelTeams, setDuelTeams] = useState(() => readSession('pt-duel-teams', [1, 2]));
   const [player, setPlayer] = useState(() => (IS_PHONE ? readSession('pt-player', null) : null));
 
-  useEffect(() => { if (IS_HOST) writeSession('pt-view', view); }, [view]);
-  useEffect(() => { if (IS_HOST) writeSession('pt-demo-team', demoTeam); }, [demoTeam]);
-  useEffect(() => { if (IS_HOST) writeSession('pt-duel-teams', duelTeams); }, [duelTeams]);
+  useEffect(() => { if (isHost) writeSession('pt-view', view); }, [view, isHost]);
+  useEffect(() => { if (isHost) writeSession('pt-demo-team', demoTeam); }, [demoTeam, isHost]);
+  useEffect(() => { if (isHost) writeSession('pt-duel-teams', duelTeams); }, [duelTeams, isHost]);
 
   useEffect(() => {
     realtimeHub.init((s) => {
       if (!s || s.v !== 2) return;
-      offsetRef.current = IS_HOST ? 0 : (s.sentAt ? s.sentAt - Date.now() : 0);
+      offsetRef.current = isHostRef.current ? 0 : (s.sentAt ? s.sentAt - Date.now() : 0);
       stateRef.current = s;
       setRoomState(s);
     });
 
     realtimeHub.setActionHandler(({ action, payload }) => {
-      if (!IS_HOST) return;
+      if (!isHostRef.current) return;
       if (action === 'sync:request') {
         realtimeHub.broadcastState({ ...stateRef.current, sentAt: Date.now() });
         return;
@@ -85,7 +96,7 @@ export default function App() {
     });
 
     realtimeHub.onReady(() => {
-      if (!IS_HOST) {
+      if (!isHostRef.current) {
         realtimeHub.emitAction('sync:request');
       } else {
         realtimeHub.broadcastState({ ...stateRef.current, sentAt: Date.now() });
@@ -94,14 +105,13 @@ export default function App() {
 
     // Request sync berkala untuk siswa jika belum mulai (mengantisipasi jeda koneksi mobile)
     let syncTimer = null;
-    if (!IS_HOST) {
-      realtimeHub.emitAction('sync:request');
-      syncTimer = setInterval(() => {
+    syncTimer = setInterval(() => {
+      if (!isHostRef.current) {
         if (!stateRef.current?.isPlaying) {
           realtimeHub.emitAction('sync:request');
         }
-      }, 3000);
-    }
+      }
+    }, 3000);
 
     const poll = setInterval(() => setTransport(realtimeHub.transport), 1200);
     return () => {
@@ -121,20 +131,20 @@ export default function App() {
 
   // host: siarkan denyut state berkala saat bermain agar HP siswa tidak pernah tertinggal
   useEffect(() => {
-    if (!IS_HOST || !roomState.isPlaying) return;
+    if (!isHost || !roomState.isPlaying) return;
     const heartbeat = setInterval(() => {
       realtimeHub.broadcastState({ ...stateRef.current, sentAt: Date.now() });
     }, 2500);
     return () => clearInterval(heartbeat);
-  }, [roomState.isPlaying]);
+  }, [isHost, roomState.isPlaying]);
 
   // host: akhiri permainan saat 15 menit habis, dan ledakkan Bom Waktu tepat waktu
   // (mode server Wi-Fi: server yang mengurus detak ini)
   useEffect(() => {
-    if (!IS_HOST) return;
+    if (!isHost) return;
     if (roomState.isPlaying && roomState.gameEndsAt && now >= roomState.gameEndsAt) emit('game:timeup');
     else if (transport !== 'socket' && hasPendingExplosion(roomState, now)) emit('game:tick');
-  }, [now, roomState, transport, emit]);
+  }, [now, roomState, transport, emit, isHost]);
 
   const handleJoin = (p) => {
     writeSession('pt-player', p);
@@ -154,17 +164,45 @@ export default function App() {
     />
   );
 
+  const handleAdminLoginSuccess = () => {
+    setIsAdmin(true);
+    setShowAdminLogin(false);
+    setView('teacher');
+    setTimeout(() => {
+      realtimeHub.broadcastState({ ...stateRef.current, sentAt: Date.now() });
+    }, 100);
+  };
+
+  const handleLogout = () => {
+    logoutAdmin();
+    setIsAdmin(false);
+    setView('student');
+    setShowAdminLogin(true);
+  };
+
   return (
     <div className="flex min-h-dvh flex-col bg-night">
-      {IS_HOST && (
-        <DemoBar view={view} setView={setView} transport={transport} onOpenConfig={() => setShowConfig(true)} />
+      {isHost && (
+        <DemoBar
+          view={view}
+          setView={setView}
+          transport={transport}
+          onOpenConfig={() => setShowConfig(true)}
+          onLogout={handleLogout}
+        />
       )}
 
-      {view === 'teacher' && IS_HOST && (
-        <TeacherDashboard roomState={roomState} now={now} emit={emit} transport={transport} />
+      {isHost && view === 'teacher' && (
+        <TeacherDashboard
+          roomState={roomState}
+          now={now}
+          emit={emit}
+          transport={transport}
+          onLogout={handleLogout}
+        />
       )}
 
-      {view === 'student' && IS_HOST && (
+      {isHost && view === 'student' && (
         <div className="flex flex-1 justify-center bg-[#05060F] px-0 sm:px-4 sm:py-4">
           <div className="flex w-full max-w-[440px] flex-col gap-3">
             <DemoPhoneControls teamId={demoTeam} setTeamId={setDemoTeam} emit={emit} />
@@ -173,7 +211,7 @@ export default function App() {
         </div>
       )}
 
-      {view === 'duel' && IS_HOST && (
+      {isHost && view === 'duel' && (
         <div className="flex flex-1 flex-wrap items-start justify-center gap-x-10 gap-y-6 bg-[#05060F] px-4 py-4">
           {[0, 1].map((slot) => (
             <div key={slot} className="flex w-full max-w-[400px] flex-col gap-3">
@@ -189,7 +227,7 @@ export default function App() {
         </div>
       )}
 
-      {IS_PHONE && (player ? (
+      {!isHost && (player ? (
         <div className="h-dvh">
           <StudentClient
             key={player.teamId}
@@ -203,10 +241,22 @@ export default function App() {
           />
         </div>
       ) : (
-        <StudentJoin roomState={roomState} onJoin={handleJoin} transport={transport} />
+        <StudentJoin
+          roomState={roomState}
+          onJoin={handleJoin}
+          transport={transport}
+          onOpenAdminLogin={() => setShowAdminLogin(true)}
+        />
       ))}
 
       <SupabaseConfigModal isOpen={showConfig} onClose={() => setShowConfig(false)} />
+
+      <AdminLoginModal
+        isOpen={showAdminLogin}
+        onClose={() => setShowAdminLogin(false)}
+        onSuccess={handleAdminLoginSuccess}
+        onSwitchToStudent={() => setShowAdminLogin(false)}
+      />
     </div>
   );
 }
@@ -219,7 +269,7 @@ function PhoneFrame({ children }) {
   );
 }
 
-function DemoBar({ view, setView, transport, onOpenConfig }) {
+function DemoBar({ view, setView, transport, onOpenConfig, onLogout }) {
   return (
     <div className="border-b border-white/10 bg-[#05060F] text-white">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2 md:px-6">
@@ -240,18 +290,35 @@ function DemoBar({ view, setView, transport, onOpenConfig }) {
         {view === 'duel' && (
           <span className="text-sm text-muted">Lempar skill dari satu HP, efeknya langsung terlihat di HP sebelah.</span>
         )}
-        <button
-          type="button"
-          onClick={onOpenConfig}
-          className="ml-auto flex min-h-9 items-center gap-2 rounded-full px-3 text-sm text-muted transition-colors hover:bg-white/[0.07] hover:text-white"
-        >
-          <span
-            className={`h-2 w-2 rounded-full ${transport === 'supabase-connecting' ? 'animate-pulse' : ''}`}
-            style={{ background: TRANSPORT_DOT_COLOR[transport] || '#FFB800' }}
-            aria-hidden="true"
-          />
-          {TRANSPORT_LABEL[transport] || transport}
-        </button>
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onOpenConfig}
+            className="flex min-h-9 items-center gap-2 rounded-full px-3 text-sm text-muted transition-colors hover:bg-white/[0.07] hover:text-white"
+          >
+            <span
+              className={`h-2 w-2 rounded-full ${transport === 'supabase-connecting' ? 'animate-pulse' : ''}`}
+              style={{ background: TRANSPORT_DOT_COLOR[transport] || '#FFB800' }}
+              aria-hidden="true"
+            />
+            {TRANSPORT_LABEL[transport] || transport}
+          </button>
+          {onLogout && (
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm('Kunci layar guru dan logout?')) {
+                  onLogout();
+                }
+              }}
+              className="flex min-h-9 items-center gap-1.5 rounded-full px-3 text-xs font-bold text-coral/90 transition-colors hover:bg-coral/10 hover:text-coral"
+              title="Kunci layar guru (Logout)"
+            >
+              <span>🔒</span>
+              <span>Kunci</span>
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
