@@ -32,13 +32,13 @@ export default function StudentJoin({ roomState, onJoin, transport = 'local' }) 
       <div className="relative shrink-0 overflow-hidden px-5 pb-24 pt-[max(28px,env(safe-area-inset-top))]">
         <div className="absolute right-4 top-[max(16px,env(safe-area-inset-top))] z-20 flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-xs backdrop-blur-md">
           <span
-            className="h-2 w-2 rounded-full"
+            className={`h-2 w-2 rounded-full ${transport === 'supabase-connecting' ? 'animate-pulse' : ''}`}
             style={{
-              background: transport === 'supabase' ? '#3CE0A0' : transport === 'supabase-connecting' ? '#FFB800' : '#FF5A5A'
+              background: transport === 'supabase' ? '#3CE0A0' : transport === 'supabase-connecting' ? '#FFB800' : transport === 'supabase-error' ? '#FF4757' : '#FFB800'
             }}
           />
           <span className="text-white/80">
-            {transport === 'supabase' ? 'Supabase Online' : transport === 'supabase-connecting' ? 'Menghubungkan...' : 'Mode Lokal'}
+            {transport === 'supabase' ? 'Supabase Online' : transport === 'supabase-connecting' ? 'Menghubungkan...' : transport === 'supabase-error' ? 'Supabase Gagal' : 'Mode Lokal'}
           </span>
         </div>
 

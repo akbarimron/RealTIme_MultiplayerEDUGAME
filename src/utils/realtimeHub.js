@@ -19,12 +19,15 @@ class RealtimeHub {
     this.onActionHandler = null;
     this.onReadyCallback = null;
     this.isSubscribed = false;
+    this.hasError = false;
     this.mode = 'local';
   }
 
   get transport() {
     if (this.supabaseChannel) {
-      return this.isSubscribed ? 'supabase' : 'supabase-connecting';
+      if (this.isSubscribed) return 'supabase';
+      if (this.hasError) return 'supabase-error';
+      return 'supabase-connecting';
     }
     if (this.socket && this.socket.connected) return 'socket';
     return 'local';
@@ -43,6 +46,7 @@ class RealtimeHub {
     const supabase = getSupabase();
     if (supabase) {
       this.mode = 'supabase';
+      this.hasError = false;
       this.supabaseChannel = supabase.channel(CHANNEL_NAME, {
         config: {
           broadcast: { self: false, ack: true },
@@ -56,11 +60,15 @@ class RealtimeHub {
           console.log(`⚡ [Supabase Realtime] Channel status: ${status}`, err || '');
           if (status === 'SUBSCRIBED') {
             this.isSubscribed = true;
+            this.hasError = false;
             if (this.onReadyCallback) {
               try { this.onReadyCallback(); } catch (e) { console.error(e); }
             }
           } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
             this.isSubscribed = false;
+            if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+              this.hasError = true;
+            }
           }
         });
       return;
@@ -161,6 +169,8 @@ class RealtimeHub {
     this.broadcastChannel = null;
     this.socket = null;
     this.listeners = [];
+    this.isSubscribed = false;
+    this.hasError = false;
   }
 }
 

@@ -30,7 +30,16 @@ const TRANSPORT_LABEL = {
   local: 'Lokal: antar tab di laptop ini',
   socket: 'Server Wi-Fi',
   supabase: 'Supabase online',
-  'supabase-connecting': 'Menyambung ke Supabase...'
+  'supabase-connecting': 'Menyambung ke Supabase...',
+  'supabase-error': 'Koneksi Supabase gagal (cek URL/Key)'
+};
+
+const TRANSPORT_DOT_COLOR = {
+  local: '#FFB800',
+  socket: '#3CE0A0',
+  supabase: '#3CE0A0',
+  'supabase-connecting': '#FFB800',
+  'supabase-error': '#FF4757'
 };
 
 const VIEWS = [
@@ -236,8 +245,12 @@ function DemoBar({ view, setView, transport, onOpenConfig }) {
           onClick={onOpenConfig}
           className="ml-auto flex min-h-9 items-center gap-2 rounded-full px-3 text-sm text-muted transition-colors hover:bg-white/[0.07] hover:text-white"
         >
-          <span className="h-2 w-2 rounded-full" style={{ background: transport === 'local' ? '#FFB800' : '#3CE0A0' }} aria-hidden="true" />
-          {TRANSPORT_LABEL[transport]}
+          <span
+            className={`h-2 w-2 rounded-full ${transport === 'supabase-connecting' ? 'animate-pulse' : ''}`}
+            style={{ background: TRANSPORT_DOT_COLOR[transport] || '#FFB800' }}
+            aria-hidden="true"
+          />
+          {TRANSPORT_LABEL[transport] || transport}
         </button>
       </div>
     </div>

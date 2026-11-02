@@ -658,9 +658,9 @@ function WaitingCard({ paused, demo, onStart, transport }) {
       </p>
       <div className="mt-1 flex items-center gap-2 rounded-full bg-paper px-3 py-1.5 text-xs font-semibold text-ink-2">
         <span
-          className="h-2 w-2 rounded-full"
+          className={`h-2 w-2 rounded-full ${transport === 'supabase-connecting' ? 'animate-pulse' : ''}`}
           style={{
-            background: transport === 'supabase' ? '#3CE0A0' : transport === 'supabase-connecting' ? '#FFB800' : '#FF5A5A'
+            background: transport === 'supabase' ? '#3CE0A0' : transport === 'supabase-connecting' ? '#FFB800' : transport === 'supabase-error' ? '#FF4757' : '#FFB800'
           }}
         />
         <span>
@@ -668,7 +668,9 @@ function WaitingCard({ paused, demo, onStart, transport }) {
             ? 'Terhubung ke Cloud (Supabase Online)'
             : transport === 'supabase-connecting'
             ? 'Menyambung ke Supabase...'
-            : 'Mode Lokal (Belum terhubung ke Supabase)'}
+            : transport === 'supabase-error'
+            ? 'Koneksi Supabase Gagal'
+            : 'Mode Lokal (Wi-Fi / Antar Tab)'}
         </span>
       </div>
       {demo && (
