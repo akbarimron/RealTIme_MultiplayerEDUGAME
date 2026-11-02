@@ -51,8 +51,8 @@ export function sanitizeSupabaseKey(rawKey) {
 
 // Dapatkan konfigurasi dari LocalStorage atau Environment variables (.env / Vercel)
 export function getSupabaseConfig() {
-  const envUrl = import.meta.env.VITE_SUPABASE_URL;
-  const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  const envUrl = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env.VITE_SUPABASE_URL : '';
+  const envKey = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env.VITE_SUPABASE_ANON_KEY : '';
 
   let localUrl = '';
   let localKey = '';

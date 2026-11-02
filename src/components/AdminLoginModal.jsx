@@ -19,7 +19,7 @@ export default function AdminLoginModal({ isOpen, onClose, onSuccess, onSwitchTo
     }
   }, [isOpen]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!password.trim()) {
       setError('Masukkan kata sandi guru.');
@@ -28,7 +28,7 @@ export default function AdminLoginModal({ isOpen, onClose, onSuccess, onSwitchTo
     setError('');
     setLoading(true);
 
-    const res = loginAdmin(password, remember);
+    const res = await loginAdmin(password, remember);
     setLoading(false);
 
     if (res.success) {

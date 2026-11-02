@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Modal, { CloseButton } from './ui/Modal';
-import { changeAdminPassword, resetAdminPassword } from '../utils/adminAuth';
+import { changeAdminPassword, resetAdminPassword, ADMIN_CONFIG_SQL } from '../utils/adminAuth';
 
 export default function AdminPasswordChangeModal({ isOpen, onClose }) {
   const [oldPassword, setOldPassword] = useState('');
@@ -8,8 +8,10 @@ export default function AdminPasswordChangeModal({ isOpen, onClose }) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [copiedSql, setCopiedSql] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
@@ -19,24 +21,29 @@ export default function AdminPasswordChangeModal({ isOpen, onClose }) {
       return;
     }
 
-    const res = changeAdminPassword(oldPassword, newPassword);
+    setLoading(true);
+    const res = await changeAdminPassword(oldPassword, newPassword);
+    setLoading(false);
+
     if (res.success) {
-      setSuccess('Kata sandi guru berhasil diperbarui!');
+      setSuccess(res.message || 'Kata sandi guru berhasil diperbarui!');
       setOldPassword('');
       setNewPassword('');
       setConfirmPassword('');
       setTimeout(() => {
         setSuccess('');
         onClose?.();
-      }, 1500);
+      }, 1800);
     } else {
       setError(res.error || 'Gagal mengubah kata sandi.');
     }
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
     if (window.confirm('Kembalikan kata sandi guru ke default ("guru123")?')) {
-      resetAdminPassword();
+      setLoading(true);
+      await resetAdminPassword();
+      setLoading(false);
       setSuccess('Kata sandi berhasil dikembalikan ke default ("guru123").');
       setOldPassword('');
       setNewPassword('');
@@ -48,14 +55,24 @@ export default function AdminPasswordChangeModal({ isOpen, onClose }) {
     }
   };
 
+  const copySql = async () => {
+    try {
+      await navigator.clipboard.writeText(ADMIN_CONFIG_SQL);
+      setCopiedSql(true);
+      setTimeout(() => setCopiedSql(false), 2000);
+    } catch {
+      setCopiedSql(false);
+    }
+  };
+
   return (
     <Modal open={isOpen} onClose={onClose} label="Pengaturan Keamanan Guru" size="md" sheetOnMobile={false}>
       <div className="flex flex-col gap-5 p-6">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-extrabold">Ubah Kata Sandi Guru</h2>
+            <h2 className="text-2xl font-extrabold">Kata Sandi Database</h2>
             <p className="text-[14px] text-ink-2">
-              Jaga kerahasiaan kata sandi agar siswa tidak bisa mengakses layar proyektor.
+              Tersimpan di Database Supabase agar terpusat dan aman.
             </p>
           </div>
           <CloseButton onClick={onClose} />
@@ -67,7 +84,7 @@ export default function AdminPasswordChangeModal({ isOpen, onClose }) {
             <input
               type="password"
               required
-              placeholder="Masukkan sandi saat ini (default: guru123)"
+              placeholder="Masukkan sandi saat ini"
               value={oldPassword}
               onChange={(e) => setOldPassword(e.target.value)}
               className="h-12 rounded-2xl bg-paper px-4 font-mono text-sm font-medium outline-none ring-2 ring-transparent focus:ring-ink"
@@ -113,11 +130,16 @@ export default function AdminPasswordChangeModal({ isOpen, onClose }) {
           )}
 
           <div className="flex gap-2 pt-2">
-            <button type="submit" className="btn btn-ink flex-1 min-h-[50px] text-base font-extrabold">
-              Simpan Sandi Baru
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn btn-ink flex-1 min-h-[50px] text-base font-extrabold disabled:opacity-50"
+            >
+              {loading ? 'Menyimpan ke Database...' : 'Simpan ke Database'}
             </button>
             <button
               type="button"
+              disabled={loading}
               onClick={handleReset}
               className="btn btn-white min-h-[50px] px-4 text-xs font-bold text-coral ring-1 ring-coral/20 hover:bg-coral/10"
               title="Reset ke default guru123"
@@ -126,6 +148,20 @@ export default function AdminPasswordChangeModal({ isOpen, onClose }) {
             </button>
           </div>
         </form>
+
+        <div className="flex items-center justify-between gap-3 rounded-[20px] bg-paper p-3.5 text-xs">
+          <div className="min-w-0 flex-1">
+            <p className="font-bold text-ink">Skema SQL Database Supabase</p>
+            <p className="text-ink-2">Jalankan sekali di Supabase SQL Editor untuk membuat tabel `admin_config`.</p>
+          </div>
+          <button
+            type="button"
+            onClick={copySql}
+            className="btn btn-white min-h-8 shrink-0 px-3 text-xs font-bold ring-1 ring-[#D6D2EA]"
+          >
+            {copiedSql ? 'Tersalin!' : 'Salin SQL'}
+          </button>
+        </div>
       </div>
     </Modal>
   );

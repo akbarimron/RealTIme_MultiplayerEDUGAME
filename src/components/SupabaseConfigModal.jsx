@@ -2,7 +2,22 @@ import React, { useState } from 'react';
 import Modal, { CloseButton } from './ui/Modal';
 import { getSupabaseConfig, saveSupabaseConfig, clearSupabaseConfig, sanitizeSupabaseUrl, sanitizeSupabaseKey } from '../utils/supabaseClient';
 
-const SQL = `-- Opsional: tabel riwayat sesi
+const SQL = `-- 1. Tabel konfigurasi & kata sandi guru (Database Supabase)
+create table if not exists public.admin_config (
+  key text primary key,
+  value text not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now())
+);
+alter table public.admin_config enable row level security;
+drop policy if exists "Izinkan baca admin_config" on public.admin_config;
+create policy "Izinkan baca admin_config" on public.admin_config for select using (true);
+drop policy if exists "Izinkan simpan admin_config" on public.admin_config;
+create policy "Izinkan simpan admin_config" on public.admin_config for insert with check (true);
+drop policy if exists "Izinkan update admin_config" on public.admin_config;
+create policy "Izinkan update admin_config" on public.admin_config for update using (true);
+insert into public.admin_config (key, value) values ('admin_password', 'guru123') on conflict (key) do nothing;
+
+-- 2. Opsional: tabel riwayat sesi tebing
 create table if not exists public.game_sessions (
   id text primary key,
   is_playing boolean default false,
