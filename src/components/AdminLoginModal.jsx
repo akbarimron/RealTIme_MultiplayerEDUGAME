@@ -98,7 +98,6 @@ export default function AdminLoginModal({ isOpen, onClose, onSuccess, onSwitchTo
               />
               <span>Ingat saya di perangkat ini</span>
             </label>
-            <span className="text-[11px] text-muted-foreground">Default: <code className="bg-paper px-1 py-0.5 rounded text-ink font-bold">guru123</code></span>
           </div>
 
           {error && (
